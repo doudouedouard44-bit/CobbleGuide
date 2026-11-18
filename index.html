@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide Cobblemon – Spawns</title>
+<style>
+:root{--bg:#f4f5f8;--card:#fff;--tx:#1c1f2a;--mut:#6a7085;--bd:#e1e4ec;--ac:#e3350d;--chip:#eceef4;--ok:#1f8a4c}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#12141b;--card:#1c2030;--tx:#eceef6;--mut:#9aa1b8;--bd:#2b3148;--ac:#ff6a47;--chip:#2a3046;--ok:#4cc98a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+header{position:sticky;top:0;background:var(--bg);padding:14px 14px 8px;z-index:5;border-bottom:1px solid var(--bd)}
+h1{margin:0 0 10px;font-size:20px}
+h1 span{color:var(--ac)}
+#q{width:100%;padding:12px 14px;font-size:16px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:8px 0 2px}
+.chip{flex:none;border:0;background:var(--chip);color:var(--tx);padding:6px 11px;border-radius:99px;font-size:13px;cursor:pointer}
+.chip.on{background:var(--ac);color:#fff}
+main{max-width:760px;margin:0 auto;padding:12px 14px 40px}
+.count{color:var(--mut);font-size:13px;margin:4px 2px 10px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px;margin-bottom:10px;overflow:hidden}
+.head{display:flex;align-items:center;gap:12px;padding:10px 12px;cursor:pointer;width:100%;border:0;background:none;color:inherit;text-align:left;font:inherit}
+.nm{font-weight:700;font-size:17px}
+.dex{color:var(--mut);font-size:12px}
+.tp{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--chip);margin-right:4px}
+.body{display:none;padding:2px 14px 14px;border-top:1px solid var(--bd)}
+.card.open .body{display:block}
+h3{font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin:16px 0 6px}
+.sp{background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+.sp b{font-size:14px}
+.row{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.b{font-size:12.5px;padding:3px 9px;border-radius:8px;background:var(--chip)}
+.b.tag{border:1px dashed var(--mut);background:none}
+.b.cond{background:color-mix(in srgb,var(--ac) 16%,transparent)}
+.b small{color:var(--mut)}
+.slots{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.slot{background:var(--bg);border-radius:10px;padding:9px;font-size:13px;border:1px solid var(--bd)}
+.slot em{display:block;font-style:normal;color:var(--mut);font-size:11px;margin-bottom:2px}
+.note{color:var(--mut);font-size:12.5px;margin-top:8px}
+.empty{text-align:center;color:var(--mut);padding:40px 0}
+@media(max-width:480px){.slots{grid-template-columns:1fr}}
+.biorow{margin-bottom:2px}
+#bio{width:100%;padding:11px 12px;font-size:15px;border:1px solid var(--bd);border-radius:12px;background:var(--card);color:var(--tx)}
+.b.no{background:#d9363e26}
+.b.warn{background:#f5a62333;border:1px solid #f5a623}
+</style>
+</head>
+<body>
+<header>
+  <h1>Guide <span>Cobblemon</span> – Spawns &amp; Poké Snacks</h1>
+  <input id="q" type="search" placeholder="Rechercher un Pokémon, un biome, un type…" autocomplete="off">
+  <div class="biorow"><select id="bio" aria-label="Biome"><option value="">Tous les biomes</option></select></div>
+  <div class="chips" id="chips"></div>
+</header>
+<main><div class="count" id="count"></div><div id="list"></div></main>
+
+<script>
+/* ====== DONNÉES : pour ajouter un Pokémon, copie un bloc et modifie-le ======
+   pos: g=sur terre, s=sous l'eau, f=pêche | c: conditions | atk: p=physique, s=spécial, m=mixte */
+const DATA=[
+{id:150,n:"Mewtwo",t:["psychic"],atk:"s",sp:[{pos:"g",lvl:"70",w:1,c:["sky"],bio:["#cobblemon:is_mountain","#minecraft:is_end"]},
+ {lbl:"2ᵉ fichier mewtwo.json",pos:"g",lvl:"70",w:0.5,c:["nothunder"],bio:["minecraft:mushroom_fields","terralith:amethyst_canyon","terralith:amethyst_rainforest","terralith:mirage_isles","terralith:moonlight_grove","terralith:moonlight_valley","#minecraft:is_end"]}]},
+{id:382,n:"Kyogre",t:["water"],atk:"s",sp:[
+ {pos:"s",lvl:"70",w:3,c:["rain"],bio:["#cobblemon:is_ocean","#cobblemon:is_cold_ocean"]},
+ {pos:"f",lvl:"70",w:0.5,c:["sky"],bio:["#cobblemon:is_ocean","#cobblemon:is_cold_ocean"]}]},
+{id:383,n:"Groudon",t:["ground"],atk:"p",sp:[{pos:"g",lvl:"70",w:2,c:[],bio:["#cobblemon:is_volcanic","#minecraft:is_nether","biomesoplenty:erupting_inferno","terralith:volcanic_crater","terralith:volcanic_peaks","terralith:hot_shrubland"]}]},
+{id:384,n:"Rayquaza",t:["dragon","flying"],atk:"p",sp:[{pos:"g",lvl:"70-85",w:3,c:[],bio:["#cobblemon:is_floral","biomesoplenty:dead_forest","biomesoplenty:old_growth_dead_forest","biomesoplenty:lavender_field","terralith:emerald_peaks","terralith:haze_mountains","terralith:sakura_grove"]}]},
+{id:643,n:"Reshiram",t:["dragon","fire"],atk:"s",sp:[
+ {pos:"g",lvl:"70",w:3.5,c:["struct:Forteresse du Nether","base:Briques du Nether"],bio:[]},
+ {pos:"g",lvl:"70",w:3.5,c:[],bio:["biomesoplenty:erupting_inferno","terralith:volcanic_crater","#cobblemon:is_volcanic","terralith:volcanic_peaks","terralith:hot_shrubland"]}]},
+{id:644,n:"Zekrom",t:["dragon","electric"],atk:"p",sp:[{pos:"g",lvl:"70",w:3,c:["thunder","near:Paratonnerre"],bio:["#cobblemon:is_mountain","terralith:alpine_highlands","terralith:highlands","biomesoplenty:cold_desert"]}]},
+{id:646,n:"Kyurem",t:["dragon","ice"],atk:"m",sp:[{pos:"g",lvl:"70",w:3,c:["rain"],bio:["#cobblemon:is_glacial","#cobblemon:is_cold","#cobblemon:is_freezing","terralith:frozen_cliffs","terralith:glacial_chasm"]}]},
+{id:791,n:"Solgaleo",t:["psychic","steel"],atk:"p",sp:[{pos:"g",lvl:"70",w:3,c:[],bio:["#minecraft:is_end","terralith:ancient_sands","terralith:ashen_savanna","terralith:desert_canyon","biomesoplenty:dryland","biomesoplenty:lush_desert","biomesoplenty:lush_savanna"]}]},
+{id:792,n:"Lunala",t:["psychic","ghost"],atk:"s",sp:[{pos:"g",lvl:"70",w:3,c:[],bio:["#minecraft:is_end","terralith:cloud_forest","terralith:blooming_valley","terralith:mirage_isles","biomesoplenty:auroral_garden","biomesoplenty:lavender_field"]}]},
+{id:800,n:"Necrozma",t:["psychic"],atk:"s",sp:[{pos:"g",lvl:"70",w:2.25,c:[],bio:["#minecraft:is_end","biomesoplenty:ominous_woods","biomesoplenty:old_growth_dead_forest","terralith:mirage_isles","terralith:moonlight_grove","terralith:moonlight_valley"]}]},
+{id:493,n:"Arceus",t:["normal"],atk:"m",sp:[{pos:"g",lvl:"70",w:0.1,c:[],bio:["#minecraft:is_end"]}]},
+{id:901,im:10272,n:"Ursaking (Bloodmoon)",en:"Ursaluna Bloodmoon",t:["ground","normal"],atk:"p",sp:[{pos:"g",b:"common",lvl:"55-70",w:0.1,c:[],bio:["#cobblemon:is_forest","#cobblemon:is_taiga"]}]},
+{id:898,n:"Sylveroy",en:"Calyrex",t:["psychic","grass"],atk:"m",sp:[{pos:"g",lvl:"75-80",w:0.5,c:[],bio:["#cobblemon:is_hills","#cobblemon:is_spooky","biomesoplenty:redwood_forest","biomesoplenty:maple_woods","biomesoplenty:mystic_grove","biomesoplenty:auroral_garden","terralith:haze_mountains","terralith:sakura_grove"]}]},
+{id:789,n:"Cosmog",t:["psychic"],atk:"m",sp:[
+ {pos:"g",lvl:"30-40",w:1,c:["sky"],bio:["#cobblemon:is_floral","biomesoplenty:mystic_grove","biomesoplenty:auroral_garden","terralith:haze_mountains","terralith:sakura_grove"]},
+ {pos:"f",lvl:"20-25",w:0.1,c:["sky"],bio:["#cobblemon:is_foral","#aether:is_aether"]}]},
+{id:790,n:"Cosmovum",en:"Cosmoem",t:["psychic"],atk:"m",sp:[{pos:"g",lvl:"30-55",w:1.5,c:["sky"],bio:["#cobblemon:is_floral","biomesoplenty:mystic_grove","biomesoplenty:auroral_garden","terralith:haze_mountains","terralith:sakura_grove"]}]},
+{id:386,n:"Deoxys",t:["psychic"],atk:"m",sp:[{pos:"g",lvl:"75",w:0.5,c:[],bio:["#minecraft:is_end"]}]},
+{id:483,n:"Dialga",t:["steel","dragon"],atk:"s",sp:[{pos:"g",lvl:"70",w:1,c:[],bio:["#minecraft:is_end","#cobblemon:is_mountain"]}]},
+{id:905,n:"Amovénus",en:"Enamorus",t:["fairy","flying"],atk:"s",sp:[{pos:"g",lvl:"75",w:1,c:[],bio:["#cobblemon:is_foral","#cobblemon:is_swamp"]}]},
+{id:244,n:"Entei",t:["fire"],atk:"p",sp:[{pos:"g",lvl:"70",w:1,c:[],bio:["#cobblemon:is_badlands","#minecraft:is_nether","biomesoplenty:volcano","biomesoplenty:volcanic_plains"]}]},
+{id:890,n:"Éternatos",en:"Eternatus",t:["poison","dragon"],atk:"s",sp:[{pos:"g",lvl:"80-100",w:1,c:[],bio:["#minecraft:is_end","biomesoplenty:origin_valley","biomesoplenty:wintry_origin_valley"]}]},
+{id:649,n:"Genesect",t:["bug","steel"],atk:"p",sp:[
+ {pos:"g",lvl:"48-80",w:4,c:["sky"],bio:["#cobblemon:is_mountain"]},
+ {pos:"g",lvl:"48-60",w:1.5,c:["sky"],bio:["#cobblemon:is_hills"]}]},
+{id:487,n:"Giratina",t:["ghost","dragon"],atk:"m",sp:[
+ {lbl:"Forme Alterée (orb)",pos:"g",lvl:"65-75",w:0.75,c:[],bio:["#minecraft:is_end","biomesoplenty:ominous_woods","biomesoplenty:old_growth_dead_forest","terralith:mirage_isles","terralith:moonlight_grove","terralith:moonlight_valley"]},
+ {lbl:"Forme par défaut",pos:"g",lvl:"65-75",w:1,c:[],bio:["#minecraft:is_end","biomesoplenty:ominous_woods","biomesoplenty:old_growth_dead_forest","terralith:mirage_isles","terralith:moonlight_grove","terralith:moonlight_valley"]}]},
+{id:896,n:"Blizzeval",en:"Glastrier",t:["ice"],atk:"p",sp:[{pos:"g",lvl:"75",w:0.6,c:["night"],bio:["#cobblemon:is_cold","#cobblemon:is_freezing","biomesoplenty:snowy_maple_woods","terralith:alpine_grove","terralith:snowy_badlands"]}]},
+{id:250,n:"Ho-Oh",t:["fire","flying"],atk:"p",sp:[{pos:"g",lvl:"70",w:1.25,c:[],bio:["#cobblemon:is_badlands","#cobblemon:is_thermal","biomesoplenty:volcano","biomesoplenty:volcanic_plains"]}]},
+{id:720,n:"Hoopa",t:["psychic","ghost"],atk:"s",sp:[{pos:"g",lvl:"65-80",w:2,c:[],bio:["#minecraft:is_end","biomesoplenty:ominous_woods","terralith:ancient_sands","terralith:ashen_savanna","terralith:desert_canyon","biomesoplenty:dryland","biomesoplenty:lush_desert","biomesoplenty:lush_savanna"]}]},
+{id:1020,n:"Vert-de-Fer",en:"Iron Leaves",t:["grass","psychic"],atk:"p",sp:[{pos:"g",lvl:"70-80",w:0.1,c:["nothunder"],bio:["#cobblemon:is_deep_dark","#cobblemon:is_magical","minecraft:lush_caves"]}]},
+{id:647,n:"Keldeo",t:["water","fighting"],atk:"s",sp:[{pos:"g",lvl:"55-75",w:0.8,c:[],bio:["#cobblemon:is_beach","biomesoplenty:snowy_maple_woods","biomesoplenty:mystic_grove","biomesoplenty:auroral_garden","terralith:wintry_forest","terralith:amethyst_canyon"]}]},
+{id:1007,n:"Koraidon",t:["fighting","dragon"],atk:"p",sp:[
+ {pos:"g",lvl:"75-80",w:0.65,c:[],bio:["#minecraft:is_end"]},
+ {pos:"g",lvl:"80-90",w:1.1,c:[],bio:["#cobblemon:is_lush"]}]},
+{id:891,n:"Wushours",en:"Kubfu",t:["fighting"],atk:"p",sp:[{pos:"g",lvl:"15-45",w:3,c:[],bio:["#cobblemon:is_hills","biomesoplenty:snowy_maple_woods","biomesoplenty:maple_woods","biomesoplenty:aspen_glade","terralith:ancient_sands","terralith:ashen_savanna","terralith:desert_canyon","biomesoplenty:dryland","biomesoplenty:lush_desert","biomesoplenty:lush_savanna"]}]},
+{id:645,n:"Démétéros",en:"Landorus",t:["ground","flying"],atk:"p",sp:[{pos:"g",lvl:"50-70",w:0.5,c:["nothunder"],bio:["#cobblemon:is_desert","#cobblemon:is_badlands","terralith:ancient_sands","terralith:ashen_savanna","terralith:desert_canyon","biomesoplenty:dryland","biomesoplenty:lush_desert","biomesoplenty:lush_savanna"]}]},
+{id:380,n:"Latias",t:["dragon","psychic"],atk:"s",sp:[{pos:"g",lvl:"70",w:3,c:[],bio:["#cobblemon:is_plains","biomesoplenty:jacaranda_glade","biomesoplenty:lavender_field","biomesoplenty:ominous_woods","terralith:alpha_islands","terralith:mirage_isles"]}]},
+{id:381,n:"Latios",t:["dragon","psychic"],atk:"s",sp:[{pos:"g",lvl:"70",w:3,c:[],bio:["#cobblemon:is_plains","biomesoplenty:jacaranda_glade","biomesoplenty:lavender_field","biomesoplenty:ominous_woods","terralith:alpha_islands","terralith:mirage_isles"]}]},
+{id:249,n:"Lugia",t:["psychic","flying"],atk:"m",sp:[{pos:"s",lvl:"75-80",w:0.8,c:[],bio:["#cobblemon:is_ocean","#cobblemon:is_cold_ocean"]}]},
+{id:802,n:"Marshadow",t:["fighting","ghost"],atk:"p",sp:[{pos:"g",lvl:"50-75",w:0.25,c:["sky"],bio:["#cobblemon:is_hills","biomesoplenty:ominous_woods","biomesoplenty:dead_forest","biomesoplenty:old_growth_dead_forest","biomesoplenty:mystic_grove","terralith:ashen_savanna","terralith:desert_canyon","minecraft:mushroom_fields"]}]},
+{id:648,n:"Meloetta",t:["normal","psychic"],atk:"s",sp:[{pos:"g",lvl:"75",w:1,c:["village"],bio:["#cobblemon:is_plains"]}]},
+{id:151,n:"Mew",t:["psychic"],atk:"m",sp:[{pos:"g",lvl:"70",w:0.5,c:["nothunder"],bio:["minecraft:mushroom_fields","terralith:amethyst_canyon","terralith:amethyst_rainforest","terralith:mirage_isles","terralith:moonlight_grove","terralith:moonlight_valley"]}]},
+{id:1008,n:"Miraidon",t:["electric","dragon"],atk:"s",sp:[{pos:"g",lvl:"75-80",w:0.65,c:[],bio:["#minecraft:is_end"]},{pos:"g",lvl:"80-90",w:1.1,c:[],bio:["#cobblemon:is_deep_dark"]}]},
+{id:1017,n:"Ogerpon",t:["grass"],atk:"p",sp:[{pos:"g",lvl:"60-88",w:2,c:[],bio:["minecraft:lush_caves","biomesoplenty:maple_woods","biomesoplenty:auroral_garden","biomesoplenty:old_growth_dead_forest","biomesoplenty:mystic_grove","terralith:haze_mountains","terralith:sakura_grove"]}]},
+{id:484,n:"Palkia",t:["water","dragon"],atk:"s",sp:[{pos:"g",lvl:"70",w:1,c:[],bio:["#minecraft:is_end","#cobblemon:is_ocean"]}]},
+{id:25,n:"Pikachu Cosplay",t:["electric"],atk:"m",sp:[{pos:"g",b:"uncommon",lvl:"20-35",w:2.5,c:["rain"],bio:["#cobblemon:is_forest","#cobblemon:is_floral"]}]},
+{id:492,n:"Shaymin",t:["grass"],atk:"m",sp:[{pos:"g",lvl:"65-75",w:1,c:[],bio:["#cobblemon:is_floral","biomesoplenty:auroral_garden","biomesoplenty:mystic_grove","biomesoplenty:lavender_field","terralith:emerald_peaks","terralith:haze_mountains","terralith:sakura_grove"]}]},
+{id:773,n:"Silvallié",en:"Silvally",t:["normal"],atk:"m",sp:[{pos:"g",lvl:"70-100",w:1,c:[],bio:["#cobblemon:is_plains","biomesoplenty:ominous_woods","biomesoplenty:old_growth_dead_forest"]}]},
+{id:897,n:"Spectreval",en:"Spectrier",t:["ghost"],atk:"s",sp:[{pos:"g",lvl:"75",w:0.1,c:["night"],bio:["#cobblemon:is_plains","biomesoplenty:ominous_woods","biomesoplenty:dead_forest","biomesoplenty:old_growth_dead_forest","terralith:cloud_forest","terralith:blooming_valley","terralith:mirage_isles","biomesoplenty:auroral_garden","biomesoplenty:lavender_field"]}]},
+{id:787,n:"Tapu Bulu",t:["grass","fairy"],atk:"p",sp:[{pos:"g",lvl:"60",w:0.5,c:[],note:["Poids ×6 près des ruines de cercle de pierres (cobblemon:ruins/stonjourner_henge_ruins)."],bio:["#cobblemon:is_plains"]}]},
+{id:788,n:"Tapu Fini",t:["water","fairy"],atk:"s",sp:[{pos:"g",lvl:"60",w:1,c:[],note:["Poids ×5 quand il pleut."],no:["#cobblemon:is_cold"],bio:["#cobblemon:is_beach"]}]},
+{id:785,n:"Tapu Koko",t:["electric","fairy"],atk:"p",sp:[{pos:"g",lvl:"60",w:1,c:[],note:["Poids ×5 pendant un orage."],bio:["#cobblemon:is_jungle"]}]},
+{id:786,n:"Tapu Lele",t:["psychic","fairy"],atk:"s",sp:[{pos:"g",lvl:"60",w:1,c:[],note:["Poids ×5 près des ruines de piliers renversés (cobblemon:ruins/toppled_pillars_ruins)."],bio:["#cobblemon:is_magical"]}]},
+{id:642,n:"Fulguris",en:"Thundurus",t:["electric","flying"],atk:"s",sp:[{pos:"u",lvl:"50-70",w:0.5,c:["thunder"],bio:["#cobblemon:is_ocean","#cobblemon:is_cold_ocean"]}]},
+{id:641,n:"Boréas",en:"Tornadus",t:["flying"],atk:"s",sp:[{pos:"g",lvl:"50-70",w:0.5,c:["rain"],bio:["#cobblemon:is_hills","#cobblemon:is_plains","terralith:alpine_grove","terralith:alpine_highland","terralith:amethyst_canyon","biomesoplenty:jade_cliffs","biomesoplenty:hot_springs"]}]},
+{id:772,n:"Type:0",en:"Type: Null",t:["normal"],atk:"m",sp:[{pos:"g",lvl:"70-100",w:1,c:[],bio:["#cobblemon:is_plains","biomesoplenty:ominous_woods","biomesoplenty:old_growth_dead_forest"]}]},
+{id:494,n:"Victini",t:["psychic","fire"],atk:"m",sp:[{pos:"g",lvl:"70",w:0.5,c:[],bio:["#cobblemon:is_badlands"]}]},
+{id:721,n:"Volcanion",t:["fire","water"],atk:"s",sp:[{pos:"g",lvl:"70",w:2,c:[],bio:["#cobblemon:is_volcanic","#minecraft:is_nether","biomesoplenty:erupting_inferno","terralith:volcanic_crater","terralith:volcanic_peaks","terralith:hot_shrubland"]}]},
+{id:1009,n:"Serpente-Eau",en:"Walking Wake",t:["water","dragon"],atk:"s",sp:[{pos:"g",lvl:"70",w:0.1,c:["nothunder"],bio:["#cobblemon:is_ocean"]}]},
+{id:716,n:"Xerneas",t:["fairy"],atk:"m",sp:[{pos:"g",lvl:"70",w:0.1,c:["nothunder"],bio:["#cobblemon:is_lush","#cobblemon:is_floral","minecraft:flower_forest","minecraft:sunflower_plains"]}]},
+{id:888,n:"Zacian",t:["fairy"],atk:"p",sp:[{pos:"g",lvl:"70",w:1,c:[],bio:["#cobblemon:is_forest","biomesoplenty:jacaranda_glade","biomesoplenty:lavender_field","biomesoplenty:ominous_woods","terralith:cloud_forest","terralith:blooming_valley","terralith:mirage_isles","biomesoplenty:auroral_garden"]}]},
+{id:889,n:"Zamazenta",t:["fighting"],atk:"p",sp:[{pos:"g",lvl:"70",w:1,c:[],bio:["#cobblemon:is_forest","biomesoplenty:jacaranda_glade","biomesoplenty:lavender_field","biomesoplenty:ominous_woods","terralith:cloud_forest","terralith:blooming_valley","terralith:mirage_isles","biomesoplenty:auroral_garden"]}]}
+];
+
+/* ====== RÉFÉRENCES ====== */
+const TYPE_FR={normal:"Normal",fire:"Feu",water:"Eau",electric:"Électrik",grass:"Plante",ice:"Glace",fighting:"Combat",poison:"Poison",ground:"Sol",flying:"Vol",psychic:"Psy",bug:"Insecte",rock:"Roche",ghost:"Spectre",dragon:"Dragon",dark:"Ténèbres",steel:"Acier",fairy:"Fée"};
+// Baie attirant un type (x10) – source : wiki Cobblemon
+const TYPE_BERRY={normal:"Zalis",fire:"Chocco",water:"Pocpoc",electric:"Parma",grass:"Ratam",ice:"Nanone",fighting:"Pomroz",poison:"Kébia",ground:"Jouca",flying:"Cobaba",psychic:"Yapap",bug:"Panga",rock:"Charti",ghost:"Sédra",dragon:"Fraigo",dark:"Lampou",steel:"Babiri",fairy:"Selro"};
+// Baie attirant une nature qui booste la stat (100 %) – à confirmer en jeu avec Shift + clic
+const ATK_BERRY={p:{n:["Kiwan"],d:"nature Attaque"},s:{n:["Palma"],d:"nature Atq. Spé."},m:{n:["Kiwan","Palma"],d:"nature Attaque ou Atq. Spé."}};
+const BIO_FR={"#cobblemon:is_mountain":"Montagne","#minecraft:is_end":"L’End","#cobblemon:is_ocean":"Océan","#cobblemon:is_cold_ocean":"Océan froid","#cobblemon:is_volcanic":"Volcanique","#minecraft:is_nether":"Nether","#cobblemon:is_floral":"Floral","#cobblemon:is_glacial":"Glacial","#cobblemon:is_cold":"Froid","#cobblemon:is_freezing":"Gelé","#cobblemon:is_forest":"Forêt","#cobblemon:is_taiga":"Taïga","#cobblemon:is_hills":"Collines","#cobblemon:is_spooky":"Sinistre","#cobblemon:is_badlands":"Badlands","#cobblemon:is_thermal":"Thermal","#cobblemon:is_deep_dark":"Abysses (Deep Dark)","#cobblemon:is_magical":"Magique","#cobblemon:is_beach":"Plage","#cobblemon:is_lush":"Luxuriant","#cobblemon:is_swamp":"Marais","#cobblemon:is_desert":"Désert","#cobblemon:is_plains":"Plaines","#aether:is_aether":"Aether","#cobblemon:is_jungle":"Jungle","minecraft:flower_forest":"Forêt fleurie","minecraft:sunflower_plains":"Plaines de tournesols","biomesoplenty:jade_cliffs":"Falaises de jade","biomesoplenty:hot_springs":"Sources chaudes",
+"minecraft:lush_caves":"Grottes luxuriantes","minecraft:mushroom_fields":"Champs de champignons",
+"biomesoplenty:erupting_inferno":"Enfer en éruption","biomesoplenty:dead_forest":"Forêt morte","biomesoplenty:old_growth_dead_forest":"Vieille forêt morte","biomesoplenty:lavender_field":"Champ de lavande","biomesoplenty:ominous_woods":"Bois sinistres","biomesoplenty:auroral_garden":"Jardin aurorale","biomesoplenty:mystic_grove":"Bosquet mystique","biomesoplenty:cold_desert":"Désert froid","biomesoplenty:dryland":"Terres arides","biomesoplenty:lush_desert":"Désert luxuriant","biomesoplenty:lush_savanna":"Savane luxuriante","biomesoplenty:volcano":"Volcan","biomesoplenty:volcanic_plains":"Plaines volcaniques","biomesoplenty:origin_valley":"Vallée d’origine","biomesoplenty:wintry_origin_valley":"Vallée d’origine hivernale","biomesoplenty:redwood_forest":"Forêt de séquoias","biomesoplenty:maple_woods":"Bois d’érables","biomesoplenty:snowy_maple_woods":"Bois d’érables enneigés","biomesoplenty:aspen_glade":"Clairière de trembles","biomesoplenty:jacaranda_glade":"Clairière de jacarandas",
+"terralith:volcanic_crater":"Cratère volcanique","terralith:volcanic_peaks":"Pics volcaniques","terralith:hot_shrubland":"Garrigue chaude","terralith:emerald_peaks":"Pics d’émeraude","terralith:haze_mountains":"Montagnes brumeuses","terralith:sakura_grove":"Bosquet de sakuras","terralith:alpine_highlands":"Hautes terres alpines","terralith:highlands":"Hautes terres","terralith:frozen_cliffs":"Falaises gelées","terralith:glacial_chasm":"Gouffre glaciaire","terralith:ancient_sands":"Sables antiques","terralith:ashen_savanna":"Savane cendrée","terralith:desert_canyon":"Canyon désertique","terralith:cloud_forest":"Forêt de nuages","terralith:blooming_valley":"Vallée fleurie","terralith:mirage_isles":"Îles mirage","terralith:moonlight_grove":"Bosquet au clair de lune","terralith:moonlight_valley":"Vallée au clair de lune","terralith:alpine_grove":"Bosquet alpin","terralith:snowy_badlands":"Badlands enneigées","terralith:wintry_forest":"Forêt hivernale","terralith:amethyst_canyon":"Canyon d’améthyste","terralith:amethyst_rainforest":"Forêt tropicale d’améthyste","terralith:alpha_islands":"Îles alpha"};
+const TYPO={"#cobblemon:is_foral":"#cobblemon:is_floral","terralith:alpine_highland":"terralith:alpine_highlands"};
+const POS_FR={u:"En surface de l’eau",g:"Sur terre",s:"Sous l’eau",f:"À la pêche"};
+const COND_FR={sky:"Ciel visible",rain:"Il pleut",village:"Dans un village",thunder:"Orage",night:"De nuit",nothunder:"Pas d’orage"};
+const MODS={biomesoplenty:"Biomes O’ Plenty",terralith:"Terralith",minecraft:"Minecraft",aether:"Aether"};
+const BUCKET_FR={"ultra-rare":"Ultra-rare",common:"Commun",uncommon:"Peu commun"};
+
+/* ====== OUTILS ====== */
+const norm=s=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const human=s=>s.replace(/_/g," ").replace(/\b\w/g,c=>c.toUpperCase());
+function bioLabel(b){
+  const [m,id]=b.replace("#","").split(":");
+  const mod=b[0]==="#"?undefined:(MODS[m]||m);
+  if(TYPO[b])return{t:id,tag:b[0]==="#",mod,warn:"Faute de frappe dans le fichier : devrait être "+TYPO[b]+". Ne correspondra à aucun biome en jeu."};
+  return{t:BIO_FR[b]||human(id),tag:b[0]==="#",mod};
+}
+function condLabel(c){return COND_FR[c]||(c.startsWith("struct:")?"Structure : "+c.slice(7):c.startsWith("base:")?"Bloc au sol : "+c.slice(5):c.startsWith("near:")?"À proximité : "+c.slice(5):c)}
+function searchText(p){
+  return norm([p.n,p.en||"",p.id,...p.t,...p.t.map(t=>TYPE_FR[t]),...p.sp.flatMap(s=>[...s.bio.map(b=>{const l=bioLabel(b);return l.t+" "+(l.mod||"")}),...s.c.map(condLabel),POS_FR[s.pos]])].join(" "));
+}
+
+/* ====== RENDU ====== */
+const slot=(h,name,sub)=>`<div class="slot"><em>${h}</em><b>${name}</b><br><small>${sub}</small></div>`;
+function snack(p){
+  const a=ATK_BERRY[p.atk];
+  const rar=p.sp[0].b;
+  return `<h3>Poké Snack conseillé</h3><div class="slots">
+  ${slot("1 · Rareté","Pomme dorée","monte le palier de rareté")}
+  ${slot("2 · Type",p.t.map(t=>`Baie ${TYPE_BERRY[t]} <small>(${TYPE_FR[t]})</small>`).join(" ou "),"×10 de chance d’attirer ce type")}
+  ${slot("3 · Stat forte",a.n.map(x=>"Baie "+x).join(" ou "),a.d)}</div>
+  <div class="note">${rar?"Ce Pokémon est de rareté « "+BUCKET_FR[rar].toLowerCase()+" » : la pomme dorée n’est pas utile, garde plutôt les baies de type. ":""}Plus fort : la <b>pomme dorée enchantée</b> (+10 paliers de rareté, ×10 shiny). Le snack ne remplace pas les conditions de spawn. Vérifie les effets exacts en jeu avec Shift + clic sur la baie.</div>`;
+}
+function spawn(s,i,n){
+  const bio=s.bio.map(b=>{const l=bioLabel(b);return `<span class="b ${l.warn?"warn":l.tag?"tag":""}" ${l.warn?`title="${esc(l.warn)}"`:""}>${l.warn?"⚠ ":""}${esc(l.t)}${l.mod?` <small>${esc(l.mod)}</small>`:""}</span>`}).join("");
+  const cond=[POS_FR[s.pos],...s.c.map(condLabel)].map(c=>`<span class="b cond">${esc(c)}</span>`).join("");
+  const warn=s.bio.find(b=>TYPO[b]);
+  return `<div class="sp"><b>${s.lbl?esc(s.lbl)+" · ":n>1?"Spawn "+(i+1)+" · ":""}Niveau ${esc(s.lvl)} · Poids ${s.w}${s.b?" · "+BUCKET_FR[s.b]:""}</b>
+  <div class="row">${cond}</div>
+  ${bio?`<div class="row">${bio}</div>`:`<div class="note">Aucun biome particulier requis.</div>`}
+  ${s.no?`<div class="row">${s.no.map(b=>`<span class="b no">Exclu : ${esc(bioLabel(b).t)}</span>`).join("")}</div>`:""}
+  ${(s.note||[]).map(x=>`<div class="note">${esc(x)}</div>`).join("")}
+  ${warn?`<div class="note">⚠ ${esc(bioLabel(warn).warn)}</div>`:""}</div>`;
+}
+function card(p){
+  const bk=BUCKET_FR[p.sp[0].b||"ultra-rare"];
+  const wsum=bioF?" · Poids "+p.sp.filter(s=>s.bio.includes(bioF)).reduce((a,s)=>a+s.w,0).toFixed(2).replace(/\.?0+$/,""):"";
+  return `<div class="card" data-id="${p.id}">
+  <button class="head">
+  <div><div class="nm">${p.n}</div><div class="dex">N° ${String(p.id).padStart(4,"0")} · ${bk}${wsum}</div>
+  <div>${p.t.map(t=>`<span class="tp">${TYPE_FR[t]}</span>`).join("")}</div></div></button>
+  <div class="body"><h3>Conditions de spawn</h3>${p.sp.map((s,i)=>spawn(s,i,p.sp.length)).join("")}${snack(p)}</div></div>`;
+}
+
+let typeF=null,bioF="";
+const $=id=>document.getElementById(id);
+function render(){
+  const q=norm($("q").value.trim());
+  const res=DATA.filter(p=>(!typeF||p.t.includes(typeF))&&(!bioF||p.sp.some(s=>s.bio.includes(bioF)))&&(!q||searchText(p).includes(q))).sort((a,b)=>bioF?Math.max(...b.sp.filter(s=>s.bio.includes(bioF)).map(s=>s.w))-Math.max(...a.sp.filter(s=>s.bio.includes(bioF)).map(s=>s.w)):a.id-b.id);
+  $("count").innerHTML=res.length+" Pokémon sur "+DATA.length+(bioF?`<br><small>Seuls les biomes cités tels quels dans les fichiers sont trouvés : choisis aussi la catégorie (#) qui contient ton biome. Tri par poids de spawn.</small>`:"");
+  $("list").innerHTML=res.length?res.map(card).join(""):`<div class="empty">Aucun résultat.</div>`;
+  if(res.length===1)$("list").firstElementChild.classList.add("open");
+}
+function chips(){
+  const ts=[...new Set(DATA.flatMap(p=>p.t))];
+  $("chips").innerHTML=`<button class="chip on" data-t="">Tous</button>`+ts.map(t=>`<button class="chip" data-t="${t}">${TYPE_FR[t]}</button>`).join("");
+}
+function biomes(){
+  const all=[...new Set(DATA.flatMap(p=>p.sp.flatMap(s=>s.bio)))];
+  const lab=b=>{const l=bioLabel(b);return l.t+(l.mod?" · "+l.mod:"")+(l.warn?" ⚠":"")};
+  const grp=(t,a)=>`<optgroup label="${t}">`+a.sort((x,y)=>lab(x).localeCompare(lab(y),"fr")).map(b=>`<option value="${esc(b)}">${esc(lab(b))}</option>`).join("")+"</optgroup>";
+  $("bio").innerHTML=`<option value="">Tous les biomes</option>`+grp("Catégories de biomes",all.filter(b=>b[0]==="#"))+grp("Biomes précis",all.filter(b=>b[0]!=="#"));
+}
+$("bio").addEventListener("change",e=>{bioF=e.target.value;render()});
+$("chips").addEventListener("click",e=>{
+  const b=e.target.closest(".chip");if(!b)return;
+  typeF=b.dataset.t||null;
+  document.querySelectorAll(".chip").forEach(c=>c.classList.toggle("on",c===b));
+  render();
+});
+$("list").addEventListener("click",e=>{const h=e.target.closest(".head");if(h)h.parentElement.classList.toggle("open")});
+$("q").addEventListener("input",render);
+chips();biomes();render();
+</script>
+</body>
+</html>
